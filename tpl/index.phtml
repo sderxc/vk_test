@@ -84,7 +84,7 @@
 <script>
     $(document).ready(function() {
         $('#addMore').click(function() {
-            $.get('/getList/123', {}, function(data) {
+            $.get('/getList/1', {}, function(data) {
                 data.forEach(function(item) {
                     $('#itemsList').append('<tr><td>'+item.id+'</td><td>'+item.name+'</td><td>'+item.price+'</td></tr>');
                 });
