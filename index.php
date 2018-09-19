@@ -8,7 +8,7 @@ route('/', function () {
     $mc = memcache_connect('127.0.0.1', 11211);
     $conection = connect();
 
-    $stmt = mysqli_prepare($conection, "SELECT `id` FROM `goods` LIMIT 20");
+    $stmt = mysqli_prepare($conection, "SELECT `id` FROM `goods` ORDER BY `id` ASC LIMIT 20");
 
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -54,21 +54,10 @@ route('/', function () {
         }
     }
 
-
-
-//    $items = [ // simple stub
-//        ['id' => 1, 'name' => '123', 'price' => 321],
-//        ['id' => 2, 'name' => 'qweqwe', 'price' => 321],
-//        ['id' => 3, 'name' => '123123', 'price' => 321],
-//    ];
-
     include 'tpl/index.phtml';
 });
 
 route('/getList/(\d+)', function ($lastId) {
-
-
-
     $mc = memcache_connect('127.0.0.1', 11211);
     $conection = connect();
 
@@ -90,8 +79,6 @@ route('/getList/(\d+)', function ($lastId) {
         $fetchedRecords = memcache_get($mc, $mKeys);
 
         $missedKeys = array_diff($mKeys, array_keys($fetchedRecords));
-
-
 
         if ($missedKeys) {
 
@@ -168,26 +155,27 @@ route('/addItem', function () {
 //    var_dump($all);
 }, 'POST');
 
-route('/updateItem/(\d+)', function ($itemId) {
-
-
-    $conection = connect();
-
-    $stmt = mysqli_prepare($conection, "UPDATE `goods` SET name = ?, description = ?, price = ? WHERE `id` = ?");
-    mysqli_stmt_bind_param($stmt, 'ssii', $_POST['name'], $_POST['descr'], $_POST['price'], $itemId);
-    mysqli_stmt_execute($stmt);
-
+route('/updateItem', function () {
+    $itemId = $_POST['id'];
     $result = 0;
+    
+    if ($itemId) {
+        $conection = connect();
 
-    if (mysqli_stmt_affected_rows($stmt)) {
-        $result = 1;
-        $mc = memcache_connect('127.0.0.1', 11211);
-        memcache_delete($mc, 'good:' . $itemId);
+        $stmt = mysqli_prepare($conection, "UPDATE `goods` SET name = ?, description = ?, price = ? WHERE `id` = ?");
+        mysqli_stmt_bind_param($stmt, 'ssii', $_POST['name'], $_POST['descr'], $_POST['price'], $itemId);
+        mysqli_stmt_execute($stmt);
+
+        if (mysqli_stmt_affected_rows($stmt)) {
+            $result = 1;
+            $mc = memcache_connect('127.0.0.1', 11211);
+            memcache_delete($mc, 'good:' . $itemId);
+        }
     }
 
     header('Content-Type: application/json');
     echo json_encode(['result' => $result]);
-});
+}, 'POST');
 
 route('/removeItem/(\d+)', function ($itemId) {
     $conection = connect();
@@ -207,6 +195,23 @@ route('/removeItem/(\d+)', function ($itemId) {
 
     header('Content-Type: application/json');
     echo json_encode(['result' => $result]);
+});
+
+
+route('/fill', function () {
+    $conection = connect();
+
+    $names = ['qwe', 'zaxv sdf', 'sfiguo g g', 'aqwe 42'];
+
+    $i = 1;
+    $stmt = mysqli_prepare($conection, "INSERT INTO `goods` (name, description, price) VALUES (?, ?, ?)");
+    while ($i < 100000) {
+        mysqli_stmt_bind_param($stmt, 'ssi', $names[array_rand($names)], $names[array_rand($names)], mt_rand(1, 1000));
+        mysqli_stmt_execute($stmt);
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['result' => 1]);
 });
 
 

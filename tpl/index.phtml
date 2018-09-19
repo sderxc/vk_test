@@ -44,14 +44,24 @@
                 <th scope="col">#</th>
                 <th scope="col">Название</th>
                 <th scope="col">Цена</th>
+                <th scope="col">Описание</th>
+                <th scope="col">Изображение</th>
+                <th scope="col">Кнопочки</th>
             </tr>
             </thead>
             <tbody id="itemsList">
             <? foreach ($items as $item) :?>
-                <tr>
+                <tr id="itemRow-<?= $item['id']?>">
                     <td><?= $item['id']?></td>
                     <td><?= $item['name']?></td>
                     <td><?= $item['price']?></td>
+                    <td><?= $item['description']?></td>
+                    <td><img src="<?= $item['img_url']?>"></td>
+                    <td>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="editItem(<?= $item['id']; ?>)">Ред.</button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeItem(<?= $item['id']; ?>)">Удалить</button>
+                    </td>
+                    <td></td>
                 </tr>
             <? endforeach;?>
             </tbody>
@@ -75,29 +85,85 @@
                 <?include 'addItemForm.phtml'?>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#addItemForm').clearForm()">Отмена</button>
                 <button id="addItem" type="button" class="btn btn-primary">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="editItemModal" tabindex="-1" role="dialog" aria-labelledby="editItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editItemModalLabel">Редактировать товар</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <?include 'addItemForm.phtml'?>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#addItemForm').clearForm()">Отмена</button>
+                <button id="updateItem" type="button" class="btn btn-primary">Сохранить</button>
             </div>
         </div>
     </div>
 </div>
 <script>
     $(document).ready(function() {
+        var lastId = <?= end($items)['id']?>;
         $('#addMore').click(function() {
-            $.get('/getList/1', {}, function(data) {
+            $.get('/getList/'+lastId, {}, function(data) {
                 data.forEach(function(item) {
-                    $('#itemsList').append('<tr><td>'+item.id+'</td><td>'+item.name+'</td><td>'+item.price+'</td></tr>');
+                    $('#itemsList').append(
+                        '<tr id="itemRow-'+item.id+'">' +
+                            '<td>'+item.id+'</td>' +
+                            '<td>'+item.name+'</td>' +
+                            '<td>'+item.price+'</td>' +
+                            '<td>'+item.description+'</td>' +
+                            '<td><img src="'+item.price+'"></td>' +
+                            '<td>' +
+                                '<button type="button" class="btn btn-primary btn-sm">Ред.</button>'+
+                                '<button type="button" class="btn btn-danger btn-sm" onclick="removeItem('+item.id+')">Удалить</button>'+
+                            '</td>' +
+                        '</tr>');
+                    lastId = item.id;
                 });
             })
         });
 
         $('#addItem').click(function() {
-            console.log('send');
-            $('#addItemForm').ajaxSubmit(function() {
-                console.log('send');
-            });
+            $('#addItemForm').ajaxSubmit({url:'/addItem'}).clearForm();
         });
+
+        $('#updateItem').click(function() {
+            $('#editItemModal #addItemForm').ajaxSubmit({url:'/updateItem'}).clearForm();
+        });
+
+
     });
+    function removeItem(id) {
+        $.get('/removeItem/'+id, {}, function(data) {
+            if (data.result) {
+                $('#itemRow-'+id).remove();
+            }
+        })
+    }
+
+    function editItem(id) {
+        $.get('/getItem/'+id, {}, function(data) {
+            if (data) {
+                $('#editItemModal #inputItemId').val(data.id);
+                $('#editItemModal #inputItemName').val(data.name);
+                $('#editItemModal #inputItemPrice').val(data.price);
+                $('#editItemModal #inputItemDescr').val(data.description);
+
+                $('#editItemModal').modal();
+            }
+        })
+    }
+
 
 </script>
 </body>
